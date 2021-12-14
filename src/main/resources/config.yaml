@@ -1,0 +1,6 @@
+database:
+ "host": "db4free.net"
+ "port": "3306"
+ "user": "vivek140892"
+ "password": "Doodle@123"
+ "dbname": "airlines_api1689"

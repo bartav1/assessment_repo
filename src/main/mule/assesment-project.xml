@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="cff0d389-2217-41c6-8268-da8c9ed27768" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="0d0e6710-056b-4c03-ac9a-625b0cb3696f" >
+		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.user}" password="Doodle@123" database="${database.dbname}"/>
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="f15c4cb9-6524-4c56-9f97-37d44538d288" file="config.yaml" />
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="1db8b51f-e111-4041-a84e-b0eb0cefa2ce" environment="SANDBOX" applicationName="assesment-project" applicationVersion="1.0"/>
+	<flow name="get-flights" doc:id="4344cf6a-bf12-4c0e-8ea3-918669dd7f75" >
+		<http:listener doc:name="Listener" doc:id="377d115b-2595-406e-a104-138b9d6bc575" config-ref="HTTP_Listener_config" path="/getAllFlights"/>
+		<db:select doc:name="Select" doc:id="9127a96b-e27d-4bbf-8c57-995c46817712" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from Flights ;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="7f372c54-787f-49c4-9c03-2eb9f83e6615" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2c256cf4-b007-421f-9852-debc35ce9f99" message="#[payload]"/>
+	</flow>
+	<flow name="assesment-projectFlow" doc:id="5805af6a-a90d-43df-932e-3a07c184247c" >
+		<http:listener doc:name="Listener" doc:id="55cfa7ad-44d9-4101-9160-5f861d383c91" config-ref="HTTP_Listener_config" path="/postflights" allowedMethods="POST"/>
+		<db:insert doc:name="Insert" doc:id="40003676-50fc-4b96-881f-bd7780741423" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert INTO Flights(F_ID,F_NAME,F_DEST,F_PRICE,F_EMPTYSEATS) 
+VALUES(:F_ID,:F_NAME,:F_DEST,:F_PRICE,:F_EMPTYSEATS)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	F_ID: payload.F_ID,
+	F_NAME:payload.F_NAME,
+	F_DEST:payload.F_DEST,
+	F_PRICE:payload.F_PRICE,
+	F_EMPTYSEATS:payload.F_EMPTYSEATS
+	
+	
+	
+	
+}]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="Logger" doc:id="4028535c-a3ee-4904-93ad-440ca44e1ae8" message="Flights have been inserted succesfully"/>
+	</flow>
+</mule>
